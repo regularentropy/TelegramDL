@@ -12,6 +12,7 @@ const emojii = {
   Down: "\u{2B07}",
   Mark: "\u{2705}",
   Glass: "\u{1F50D}",
+  Wave: "\u{1F44B}"
 };
 
 if (!fs.existsSync(yt_dl_file)) {
@@ -21,7 +22,7 @@ if (!fs.existsSync(yt_dl_file)) {
 const ytdl_bin = new YTDlpWrap(yt_dl_file);
 
 bot.start((ctx) =>
-  ctx.reply("👋 Hi there! Paste a link with '/dl' argument to download your audio")
+  ctx.reply(`${emojii.Wave} Hi there! Paste a link with '/dl' argument to download your audio`)
 );
 
 bot.command("version", async (ctx) => {
