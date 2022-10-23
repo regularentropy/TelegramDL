@@ -5,6 +5,7 @@ This Telegram bot was made with the purpose of downloading audio clips from YouT
 ```
 git clone github.com/regularenthropy/teleDL
 cd teleDL
+npm install
 node .\main.js
 ```
 ## TODO

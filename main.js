@@ -15,11 +15,16 @@ const emojii = {
   Wave: "\u{1F44B}"
 };
 
-if (!fs.existsSync(yt_dl_file)) {
-  YTDlpWrap.downloadFromGithub(yt_dl_file);
+if (token.length < 1){
+  console.log("teleDL: Access token isn't found")
+  return 0
 }
 
-const ytdl_bin = new YTDlpWrap(yt_dl_file);
+if (!fs.existsSync(yt_dl_file)) {
+  YTDlpWrap.downloadFromGithub(yt_dl_file)
+}
+
+const ytdl_bin = new YTDlpWrap(yt_dl_file)
 
 bot.start((ctx) =>
   ctx.reply(`${emojii.Wave} Hi there! Paste a link with '/dl' argument to download your audio`)
@@ -62,29 +67,30 @@ bot.command("dl", async (ctx) => {
         "--embed-thumbnail",
       ])
       .on("error", () => {
-        ctx.telegram.sendMessage(ctx.message.chat.id, `Something went wrong`);
+        ctx.telegram.sendMessage(ctx.message.chat.id, `Something went wrong`)
       })
       .on("close", async () => {
-        var song_title = metadata.id;
+        var song_id = metadata.id;
+        var song_title = metadata.title
         await ctx.telegram.sendMessage(
           ctx.message.chat.id,
           `Finished downloading ${song_title}! ${emojii.Mark}`
         );
         await ctx.telegram.sendDocument(ctx.message.chat.id, {
-          source: `${song_title}.opus`,
-          filename: `${song_title}.opus`,
+          source: `${song_id}.opus`,
+          filename: `${song_id}.opus`,
         });
-        fs.rm(`${song_title}.opus`, { recursive:true }, (err)=> {
-          if(err) throw err;
+        fs.rm(`${song_id}.opus`, { recursive:true }, (err)=> {
+          if(err) throw err
         })
       });
   })
   .catch((err) => {
-    console.log(err);
+    console.log(err)
   });
 
 function splitToUrl(command) {
-  return command.update.message.text.split(" ")[1];
+  return command.update.message.text.split(" ")[1]
 }
 
 bot.launch();
