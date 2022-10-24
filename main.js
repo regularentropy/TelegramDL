@@ -21,14 +21,14 @@ if (token.length < 1){
   return 0
 }
 
-if (!fs.existsSync(yt_dl_file)) {
-  YTDlpWrap.downloadFromGithub(yt_dl_file)
-}
-
 if (os.platform() == "win32"){
   yt_dl_file = "yt-dlp.exe"
 } else {
   yt_dl_file = "yt-dlp"
+}
+
+if (!fs.existsSync(yt_dl_file)) {
+  YTDlpWrap.downloadFromGithub(yt_dl_file)
 }
 
 const ytdl_bin = new YTDlpWrap(yt_dl_file)
