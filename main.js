@@ -3,7 +3,7 @@ const YTDlpWrap = require("yt-dlp-wrap").default;
 const fs = require("fs");
 const os = require("os")
 
-const version = "0.0.2";
+const version = "0.0.3";
 const token = "";
 let yt_dl_file = "";
 

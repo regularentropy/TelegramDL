@@ -9,5 +9,5 @@ npm install
 node .\main.js
 ```
 ## TODO
-- [ ] Make it crossplatform (Currently Windows only)
+- [X] Make it crossplatform (Currently Windows only)
 - [ ] Add ability to select between video/audio
