@@ -1,10 +1,11 @@
 const { Telegraf } = require("telegraf");
 const YTDlpWrap = require("yt-dlp-wrap").default;
 const fs = require("fs");
+const os = require("os")
 
 const version = "0.0.2";
 const token = "";
-const yt_dl_file = "yt-dlp.exe";
+let yt_dl_file = "";
 
 const bot = new Telegraf(token);
 
@@ -22,6 +23,12 @@ if (token.length < 1){
 
 if (!fs.existsSync(yt_dl_file)) {
   YTDlpWrap.downloadFromGithub(yt_dl_file)
+}
+
+if (os.platform() == "win32"){
+  yt_dl_file = "yt-dlp.exe"
+} else {
+  yt_dl_file = "yt-dlp"
 }
 
 const ytdl_bin = new YTDlpWrap(yt_dl_file)
