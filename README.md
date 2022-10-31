@@ -8,7 +8,7 @@ cd teleDL
 npm install
 node .\main.js
 ```
-## TODO
+## Current roadmap
 - [X] Make it crossplatform (Currently Windows only)
 - [X] Add ability to select between video/audio
 - [X] Add local storage support
