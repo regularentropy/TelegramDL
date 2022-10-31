@@ -1,6 +1,6 @@
 ## About
 This Telegram bot was made with the purpose of downloading audio clips from YouTube
-## Demonstration![telebot](https://user-images.githubusercontent.com/89523758/197389431-c4dd1778-1799-4f02-a063-cbd4d9326a26.gif)
+## Demonstration!![telebot](https://user-images.githubusercontent.com/89523758/199017350-cd570715-e633-4f68-b198-0d37b2bf3879.gif)
 ## Delpoyment on a server
 ```
 git clone github.com/regularenthropy/teleDL
