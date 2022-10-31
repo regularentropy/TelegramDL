@@ -11,7 +11,7 @@ node .\main.js
 ## TODO
 - [X] Make it crossplatform (Currently Windows only)
 - [X] Add ability to select between video/audio
-- [ ] Add local storage support
-
+- [X] Add local storage support
+- [ ] Optimise code
 ## Copyright
 Copyright (c) 2022 - regularenthropy. All rights reserved.

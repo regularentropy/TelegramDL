@@ -9,6 +9,8 @@ const token = "";
 /* Security to prohibit OOM attacks */
 const enable_security = true; /* Limit traffic */
 const max_duration = 600; /* Maximum video duration in seconds */
+const enable_local = false;
+const local_dir = "local/";
 
 const bot = new Telegraf(token);
 
@@ -32,6 +34,10 @@ if (os.platform() == "win32") {
 
 if (!fs.existsSync(yt_dl_file)) {
   YTDlpWrap.downloadFromGithub(yt_dl_file);
+}
+
+if (enable_local && !fs.existsSync("local")) {
+  fs.mkdirSync("local");
 }
 
 const ytdl_bin = new YTDlpWrap(yt_dl_file);
@@ -85,18 +91,23 @@ bot.action("best-video", async (ctx) => {
     return;
   }
   ytdl_bin.exec([vid_url, "-o", "%(id)s.%(ext)s"]).on("close", async () => {
-    const vid_size = fs.statSync(vid_name).size / (1024 * 1024);
-    if (vid_size > 50) {
-      await ctx.reply("Video size is over the Telegram limit (50MB)");
+    if (!enable_local) {
+      const vid_size = fs.statSync(vid_name).size / (1024 * 1024);
+      if (vid_size > 50) {
+        await ctx.reply("video size is over the Telegram limit (50MB)");
+      } else {
+        await ctx.replyWithDocument({
+          source: vid_name,
+          filename: vid_name,
+        });
+        fs.rmSync(vid_name, { recursive: true }, (err) => {
+          if (err) throw err;
+        });
+      }
     } else {
-      await ctx.replyWithDocument({
-        source: vid_name,
-        filename: vid_name,
-      });
+      fs.renameSync(vid_name, local_dir + vid_name);
+      await ctx.sendMessage("Successfully saved to local drive");
     }
-    fs.rmSync(vid_name, { recursive: true }, (err) => {
-      if (err) throw err;
-    });
   });
 });
 
@@ -106,8 +117,10 @@ bot.action("best-audio", async (ctx) => {
   const vid_id = metadata.id;
   const vid_name = `${vid_id}.opus`;
   if (enable_security && metadata.duration > max_duration) {
-    await ctx.reply("Audio has duration over setted-up limit");
-    return;
+    if (!enable_local) {
+      await ctx.reply("Audio has duration over setted-up limit");
+      return;
+    }
   }
   ytdl_bin
     .exec([
@@ -120,18 +133,23 @@ bot.action("best-audio", async (ctx) => {
       "--embed-thumbnail",
     ])
     .on("close", async () => {
-      const vid_size = fs.statSync(vid_name).size / (1024 * 1024);
-      if (vid_size > 50) {
-        await ctx.reply("video size is over the Telegram limit (50MB)");
+      if (!enable_local) {
+        const vid_size = fs.statSync(vid_name).size / (1024 * 1024);
+        if (vid_size > 50) {
+          await ctx.reply("video size is over the Telegram limit (50MB)");
+        } else {
+          await ctx.replyWithDocument({
+            source: vid_name,
+            filename: vid_name,
+          });
+          fs.rmSync(vid_name, { recursive: true }, (err) => {
+            if (err) throw err;
+          });
+        }
       } else {
-        await ctx.replyWithDocument({
-          source: vid_name,
-          filename: vid_name,
-        });
+        fs.renameSync(vid_name, local_dir + vid_name);
+        await ctx.sendMessage("Successfully saved to local drive");
       }
-      fs.rmSync(vid_name, { recursive: true }, (err) => {
-        if (err) throw err;
-      });
     });
 });
 
