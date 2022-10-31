@@ -3,7 +3,7 @@ const YTDlpWrap = require("yt-dlp-wrap").default;
 const fs = require("fs");
 const os = require("os");
 
-const version = "0.1";
+const version = "0.2";
 const token = "";
 
 /* Security to prohibit OOM attacks */
