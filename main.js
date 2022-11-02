@@ -77,6 +77,10 @@ bot.command("help", (ctx) => {
 
 bot.command("dl", async (ctx) => {
   var url = splitToUrl(ctx);
+  if (!/youtube.com|music.youtube.com/gm.test(url)){
+    await ctx.reply("Youtube/Youtube Music link isn't found")
+    return
+  }
   await ctx.telegram.sendMessage(
     ctx.message.chat.id,
     `Searching for a video ${emojii.Glass}`
