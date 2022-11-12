@@ -4,14 +4,14 @@ This Telegram bot was made with the purpose of downloading audio clips from YouT
 ## Delpoyment on a server
 #### Windows
 ```
-git clone github.com/regularenthropy/teleDL
+git clone https://github.com/regularenthropy/teleDL
 cd teleDL
 npm install
 node .\main.js
 ```
 #### Linux
 ```
-git clone github.com/regularenthropy/teleDL
+git clone https://github.com/regularenthropy/teleDL
 cd teleDL
 npm install
 node main.js
