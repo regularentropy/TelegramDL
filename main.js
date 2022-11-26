@@ -10,7 +10,7 @@ const token = "";
 const enable_security = true; /* Limit traffic */
 const max_duration = 600; /* Maximum video duration in seconds */
 const enable_local = false;
-const local_dir = "local/";
+const local_dir = "local";
 
 const bot = new Telegraf(token);
 
@@ -48,8 +48,8 @@ if (!fs.existsSync(yt_dl_file)) {
   YTDlpWrap.downloadFromGithub(yt_dl_file);
 }
 
-if (enable_local && !fs.existsSync("local")) {
-  fs.mkdirSync("local");
+if (enable_local && !fs.existsSync(local_dir)) {
+  fs.mkdirSync(local_dir);
 }
 
 const ytdl_bin = new YTDlpWrap(yt_dl_file);
@@ -141,7 +141,7 @@ async function downloadContent(ctx, vid_type) {
         });
       }
     } else {
-      fs.renameSync(vid_name, local_dir + vid_name);
+      fs.renameSync(vid_name, `${local_dir}/${vid_name}`);
       await ctx.sendMessage("Successfully saved to local drive");
     }
   });
