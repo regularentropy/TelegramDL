@@ -22,4 +22,4 @@ node main.js
 - [X] Add local storage support
 - [ ] Optimise code
 ## Copyright
-Copyright (c) 2022 - regularenthropy. All rights reserved.
+Copyright (c) 2022-2023 - regularenthropy. All rights reserved.
