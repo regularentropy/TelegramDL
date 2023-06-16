@@ -3,7 +3,7 @@ const YTDlpWrap = require("yt-dlp-wrap").default;
 const fs = require("fs");
 const os = require("os");
 
-const version = "0.2";
+const version = "0.2.1";
 const token = "";
 
 /* Security to prohibit OOM attacks */
@@ -56,7 +56,7 @@ const ytdl_bin = new YTDlpWrap(yt_dl_file);
 
 bot.start((ctx) =>
   ctx.reply(
-    `${emojii.Wave} Hi there! Paste a link with '/dl' argument to download your audio`
+    `${emojii.Wave} Hi there! Paste a link with '/dl' argument to download your media`
   )
 );
 
@@ -71,7 +71,7 @@ bot.command("version", async (ctx) => {
 bot.command("help", (ctx) => {
   ctx.telegram.sendMessage(
     ctx.message.chat.id,
-    `/dl {yt url here} - download audio\n/version - show version\n/help - show this help message`
+    `/dl {yt url here} - download media\n/version - show version\n/help - show this help message`
   );
 });
 
@@ -122,7 +122,7 @@ async function downloadContent(ctx, vid_type) {
   }
   if (enable_security && metadata.duration > max_duration) {
     if (!enable_local) {
-      await ctx.reply("File has duration over setted-up limit");
+      await ctx.reply("File has duration over the setted-up limit");
       return;
     }
   }
