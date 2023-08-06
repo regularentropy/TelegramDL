@@ -3,7 +3,7 @@ const YTDlpWrap = require("yt-dlp-wrap").default;
 const fs = require("fs");
 const os = require("os");
 
-const version = "0.2.1";
+const version = "0.2.2";
 const token = "";
 
 /* Security to prohibit OOM attacks */
@@ -11,6 +11,7 @@ const enable_security = true; /* Limit traffic */
 const max_duration = 600; /* Maximum video duration in seconds */
 const enable_local = false;
 const local_dir = "local";
+const ytdl_autoupdate = true;
 
 const bot = new Telegraf(token);
 
@@ -150,5 +151,12 @@ async function downloadContent(ctx, vid_type) {
 function splitToUrl(command) {
   return command.update.message.text.split(" ")[1];
 }
+
+// Update yt-dlp every 3 days
+setInterval(() => {
+  if (ytdl_autoupdate){
+    YTDlpWrap.downloadFromGithub(yt_dl_file);
+  }
+}, 259200000);
 
 bot.launch();
