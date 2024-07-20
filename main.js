@@ -2,74 +2,67 @@ const { Telegraf } = require("telegraf");
 const YTDlpWrap = require("yt-dlp-wrap").default;
 const fs = require("fs");
 const os = require("os");
+const yaml = require("js-yaml");
+const path = require("path");
 
-const version = "0.2.2";
-const token = "";
+const config = yaml.load(fs.readFileSync('config.yml', 'utf8'));
 
-/* Security to prohibit OOM attacks */
-const enable_security = true; /* Limit traffic */
-const max_duration = 600; /* Maximum video duration in seconds */
-const enable_local = false;
-const local_dir = "local";
-const ytdl_autoupdate = true;
-
-const bot = new Telegraf(token);
-
-const emojii = {
-  Down: "\u{2B07}",
-  Mark: "\u{2705}",
-  Glass: "\u{1F50D}",
-  Wave: "\u{1F44B}",
+const EMOJIS = {
+  DOWN: "\u{2B07}",
+  MARK: "\u{2705}",
+  GLASS: "\u{1F50D}",
+  WAVE: "\u{1F44B}",
 };
 
-let best_audio = [
-  "",
-  "-o",
-  "%(id)s.%(ext)s",
-  "-f",
-  "bestaudio",
-  "-x",
-  "--embed-thumbnail",
-];
+// yt-dlp arguments
+const ytDlpArgs = {
+  bestAudio: ["", "-o", "%(id)s.%(ext)s", "-f", "bestaudio", "-x", "--embed-thumbnail"],
+  bestVideo: ["", "-o", "%(id)s.%(ext)s"],
+};
 
-let best_video = ["", "-o", "%(id)s.%(ext)s"];
-
-if (token.length < 1) {
-  console.log("teleDL: Access token isn't found");
-  return 0;
+if (!config.token) {
+  console.error("teleDL: Access token isn't found");
+  process.exit(1);
 }
 
-if (os.platform() == "win32") {
-  yt_dl_file = "yt-dlp.exe";
-} else {
-  yt_dl_file = "yt-dlp";
+// Determine yt-dlp executable based on OS
+const ytDlFile = os.platform() === "win32" ? "yt-dlp.exe" : "yt-dlp";
+
+if (!fs.existsSync(ytDlFile)) {
+  console.log("yt-dlp not found, downloading...");
+  YTDlpWrap.downloadFromGithub(ytDlFile).then(() => {
+    console.log("yt-dlp downloaded successfully.");
+  }).catch(err => {
+    console.error("Failed to download yt-dlp:", err);
+  });
 }
 
-if (!fs.existsSync(yt_dl_file)) {
-  YTDlpWrap.downloadFromGithub(yt_dl_file);
+if (config.local.enabled && !fs.existsSync(config.local.directory)) {
+  fs.mkdirSync(config.local.directory);
 }
 
-if (enable_local && !fs.existsSync(local_dir)) {
-  fs.mkdirSync(local_dir);
-}
+const ytdlBin = new YTDlpWrap(ytDlFile);
 
-const ytdl_bin = new YTDlpWrap(yt_dl_file);
+const bot = new Telegraf(config.token);
 
-bot.start((ctx) =>
+bot.start((ctx) => {
+  console.log(`Start command received from ${ctx.from.username}`);
   ctx.reply(
-    `${emojii.Wave} Hi there! Paste a link with '/dl' argument to download your media`
-  )
-);
+    `${EMOJIS.WAVE} Hi there! Paste a link with '/dl' argument to download your media`
+  );
+});
 
 bot.command("version", async (ctx) => {
-  let metadata = await ytdl_bin.getVersion();
-  await ctx.telegram.sendMessage(
+  console.log(`Version command received from ${ctx.from.username}`);
+  const ytDlpVersion = await ytdlBin.getVersion();
+  ctx.telegram.sendMessage(
     ctx.message.chat.id,
-    `TelegramDL Version: ${version} Alpha\nYoutubeDL Version: ${metadata}\nSource code on https://github.com/regularenthropy/teleDL`
+    `TelegramDL Version: ${config.version} Alpha\nyt-dlp Version: ${ytDlpVersion}\nSource code on https://github.com/regularenthropy/teleDL`
   );
 });
 
 bot.command("help", (ctx) => {
+  console.log(`Help command received from ${ctx.from.username}`);
   ctx.telegram.sendMessage(
     ctx.message.chat.id,
     `/dl {yt url here} - download media\n/version - show version\n/help - show this help message`
@@ -77,14 +70,16 @@ bot.command("help", (ctx) => {
 });
 
 bot.command("dl", async (ctx) => {
-  var url = splitToUrl(ctx);
-  if (!/youtube.com|music.youtube.com/gm.test(url)){
-    await ctx.reply("Youtube/Youtube Music link isn't found")
-    return
+  const url = extractUrlFromCommand(ctx);
+  console.log(`Download command received from ${ctx.from.username} with URL: ${url}`);
+  if (!isValidYoutubeUrl(url)) {
+    console.log("Invalid URL received.");
+    await ctx.reply("Youtube/Youtube Music link isn't found");
+    return;
   }
   await ctx.telegram.sendMessage(
     ctx.message.chat.id,
-    `Searching for a video ${emojii.Glass}`
+    `Searching for a video ${EMOJIS.GLASS}`
   );
   await ctx.reply(url, {
     reply_markup: {
@@ -99,64 +94,115 @@ bot.command("dl", async (ctx) => {
 });
 
 bot.action("best-video", async (ctx) => {
+  console.log(`Best video option selected by ${ctx.from.username}`);
   await downloadContent(ctx, "video");
 });
 
 bot.action("best-audio", async (ctx) => {
+  console.log(`Best audio option selected by ${ctx.from.username}`);
   await downloadContent(ctx, "audio");
 });
 
-async function downloadContent(ctx, vid_type) {
-  const vid_url = ctx.callbackQuery.message.text;
-  let metadata = await ytdl_bin.getVideoInfo(vid_url);
-  const vid_id = metadata.id;
-  var vid_name;
-  var ytdl_args;
-  if (vid_type == "audio") {
-    vid_name = `${vid_id}.opus`;
-    ytdl_args = best_audio;
-    ytdl_args[0] = vid_url;
-  } else {
-    vid_name = `${vid_id}.webm`;
-    ytdl_args = best_video;
-    ytdl_args[0] = vid_url;
-  }
-  if (enable_security && metadata.duration > max_duration) {
-    if (!enable_local) {
-      await ctx.reply("File has duration over the setted-up limit");
-      return;
-    }
-  }
-  ytdl_bin.exec(ytdl_args).on("close", async () => {
-    if (!enable_local) {
-      const vid_size = fs.statSync(vid_name).size / (1024 * 1024);
-      if (vid_size > 50) {
-        await ctx.reply("File size is over the Telegram limit (50MB)");
-      } else {
-        await ctx.replyWithDocument({
-          source: vid_name,
-          filename: vid_name,
-        });
-        fs.rmSync(vid_name, { recursive: true }, (err) => {
-          if (err) throw err;
-        });
-      }
+async function downloadContent(ctx, type) {
+  const url = ctx.callbackQuery.message.text;
+  console.log(`Starting download for: ${url}`);
+  try {
+    const metadata = await ytdlBin.getVideoInfo(url);
+    const id = metadata.id;
+    const title = metadata.title;
+    let fileName;
+    let args;
+
+    if (type === "audio") {
+      fileName = `${id}.opus`;
+      args = ytDlpArgs.bestAudio;
     } else {
-      fs.renameSync(vid_name, `${local_dir}/${vid_name}`);
-      await ctx.sendMessage("Successfully saved to local drive");
+      fileName = `${id}.webm`;
+      args = ytDlpArgs.bestVideo;
     }
-  });
+
+    args[0] = url;
+
+    if (config.security.enabled && metadata.duration > config.security.maxDuration) {
+      console.log(`File duration (${metadata.duration}s) exceeds the max duration (${config.security.maxDuration}s).`);
+      if (!config.local.enabled) {
+        await ctx.reply("File has duration over the set limit");
+        return;
+      }
+    }
+
+    await ctx.reply(`Downloading: ${title}`);
+    ytdlBin.exec(args).on("close", async (code) => {
+      console.log(`Download process exited with code: ${code}`);
+      if (code === 0) {
+        handleFilePostDownload(ctx, fileName, title);
+      } else {
+        ctx.reply("Failed to download the media. Please try again.");
+      }
+    });
+  } catch (error) {
+    console.error("Error during download process:", error);
+    ctx.reply("An error occurred while processing your request. Please try again.");
+  }
 }
 
-function splitToUrl(command) {
-  return command.update.message.text.split(" ")[1];
+async function handleFilePostDownload(ctx, fileName, title) {
+  const filePath = path.resolve(fileName);
+  console.log(`Handling post-download for file: ${filePath}`);
+  if (fs.existsSync(filePath)) {
+    if (!config.local.enabled) {
+      const fileSizeMB = fs.statSync(filePath).size / (1024 * 1024);
+      if (fileSizeMB > 50) {
+        console.log(`File size (${fileSizeMB}MB) exceeds the Telegram limit (50MB).`);
+        ctx.reply("File size is over the Telegram limit (50MB)");
+      } else {
+        try {
+          await ctx.replyWithDocument({
+            source: filePath,
+            filename: fileName,
+          }, {
+            caption: `Downloaded: ${title}`
+          });
+          console.log(`File ${fileName} sent successfully.`);
+          fs.rmSync(filePath);
+        } catch (error) {
+          console.error("Error sending the file:", error);
+          ctx.reply("Error sending the file. Please try again.");
+        }
+      }
+    } else {
+      fs.renameSync(filePath, path.join(config.local.directory, fileName));
+      ctx.telegram.sendMessage(ctx.message.chat.id, "Successfully saved to local drive");
+      console.log(`File ${fileName} saved to local drive.`);
+    }
+  } else {
+    console.error("Downloaded file does not exist:", filePath);
+    ctx.reply("Error: The downloaded file does not exist.");
+  }
+}
+
+function extractUrlFromCommand(ctx) {
+  return ctx.update.message.text.split(" ")[1];
+}
+
+function isValidYoutubeUrl(url) {
+  return /youtube.com|music.youtube.com/gm.test(url);
 }
 
 // Update yt-dlp every 3 days
 setInterval(() => {
-  if (ytdl_autoupdate){
-    YTDlpWrap.downloadFromGithub(yt_dl_file);
+  if (config.ytDlpAutoUpdate) {
+    console.log("Updating yt-dlp...");
+    YTDlpWrap.downloadFromGithub(ytDlFile).then(() => {
+      console.log("yt-dlp updated successfully.");
+    }).catch(err => {
+      console.error("Failed to update yt-dlp:", err);
+    });
   }
 }, 259200000);
 
-bot.launch();
+bot.launch().then(() => {
+  console.log("Bot launched successfully.");
+}).catch(err => {
+  console.error("Failed to launch bot:", err);
+});

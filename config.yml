@@ -1,0 +1,9 @@
+version: "1.0.0"
+token: ""
+security:
+  enabled: true
+  maxDuration: 600
+local:
+  enabled: false
+  directory: "local"
+ytDlpAutoUpdate: true
