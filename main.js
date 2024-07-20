@@ -21,7 +21,7 @@ const ytDlpArgs = {
 };
 
 if (!config.token) {
-  console.error("teleDL: Access token isn't found");
+  console.error("TelegramDL: Access token isn't found");
   process.exit(1);
 }
 
@@ -57,7 +57,7 @@ bot.command("version", async (ctx) => {
   const ytDlpVersion = await ytdlBin.getVersion();
   ctx.telegram.sendMessage(
     ctx.message.chat.id,
-    `TelegramDL Version: ${config.version} Alpha\nyt-dlp Version: ${ytDlpVersion}\nSource code on https://github.com/regularenthropy/teleDL`
+    `TelegramDL Version: ${config.version} Alpha\nyt-dlp Version: ${ytDlpVersion}\nSource code on https://github.com/regularentropy/TelegramDL`
   );
 });
 
