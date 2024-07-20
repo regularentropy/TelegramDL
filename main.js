@@ -7,6 +7,8 @@ const path = require("path");
 
 const config = yaml.load(fs.readFileSync('config.yml', 'utf8'));
 
+config.token = process.env.BOT_TOKEN || config.token;
+
 const EMOJIS = {
   DOWN: "\u{2B07}",
   MARK: "\u{2705}",
@@ -14,10 +16,9 @@ const EMOJIS = {
   WAVE: "\u{1F44B}",
 };
 
-// yt-dlp arguments
 const ytDlpArgs = {
   bestAudio: ["", "-o", "%(id)s.%(ext)s", "-f", "bestaudio", "-x", "--embed-thumbnail"],
-  bestVideo: ["", "-o", "%(id)s.%(ext)s"],
+  bestVideo: ["", "-o", "%(id)s.%(ext)s", "--embed-thumbnail"],
 };
 
 if (!config.token) {
@@ -25,23 +26,23 @@ if (!config.token) {
   process.exit(1);
 }
 
-// Determine yt-dlp executable based on OS
-const ytDlFile = os.platform() === "win32" ? "yt-dlp.exe" : "yt-dlp";
-
+const ytDlFile = os.platform() === "win32" ? "yt-dlp.exe" : "./yt-dlp";
 if (!fs.existsSync(ytDlFile)) {
-  console.log("yt-dlp not found, downloading...");
-  YTDlpWrap.downloadFromGithub(ytDlFile).then(() => {
-    console.log("yt-dlp downloaded successfully.");
-  }).catch(err => {
-    console.error("Failed to download yt-dlp:", err);
-  });
+  YTDlpWrap.downloadFromGithub(ytDlFile)
+    .then(() => {
+      console.log("yt-dlp downloaded successfully.");
+    })
+    .catch(err => {
+      console.error("Failed to download yt-dlp:", err);
+      process.exit(1);
+    });
 }
+
+const ytdlBin = new YTDlpWrap(ytDlFile);
 
 if (config.local.enabled && !fs.existsSync(config.local.directory)) {
   fs.mkdirSync(config.local.directory);
 }
-
-const ytdlBin = new YTDlpWrap(ytDlFile);
 
 const bot = new Telegraf(config.token);
 
@@ -57,7 +58,7 @@ bot.command("version", async (ctx) => {
   const ytDlpVersion = await ytdlBin.getVersion();
   ctx.telegram.sendMessage(
     ctx.message.chat.id,
-    `TelegramDL Version: ${config.version} Alpha\nyt-dlp Version: ${ytDlpVersion}\nSource code on https://github.com/regularentropy/TelegramDL`
+    `TelegramDL Version: ${config.version} Alpha\nyt-dlp Version: ${ytDlpVersion}\nSource code on https://github.com/regularenthropy/TelegramDL`
   );
 });
 
@@ -105,23 +106,23 @@ bot.action("best-audio", async (ctx) => {
 
 async function downloadContent(ctx, type) {
   const url = ctx.callbackQuery.message.text;
-  console.log(`Starting download for: ${url}`);
+  console.log(`Starting download for URL: ${url}`);
   try {
     const metadata = await ytdlBin.getVideoInfo(url);
     const id = metadata.id;
-    const title = metadata.title;
+    const title = metadata.title.replace(/[\/:*?"<>|]/g, '');
     let fileName;
-    let args;
+    let ytdlArgs;
 
     if (type === "audio") {
       fileName = `${id}.opus`;
-      args = ytDlpArgs.bestAudio;
+      ytdlArgs = ytDlpArgs.bestAudio;
     } else {
       fileName = `${id}.webm`;
-      args = ytDlpArgs.bestVideo;
+      ytdlArgs = ytDlpArgs.bestVideo;
     }
 
-    args[0] = url;
+    ytdlArgs[0] = url;
 
     if (config.security.enabled && metadata.duration > config.security.maxDuration) {
       console.log(`File duration (${metadata.duration}s) exceeds the max duration (${config.security.maxDuration}s).`);
@@ -132,10 +133,12 @@ async function downloadContent(ctx, type) {
     }
 
     await ctx.reply(`Downloading: ${title}`);
-    ytdlBin.exec(args).on("close", async (code) => {
+    ytdlBin.exec(ytdlArgs).on("close", async (code) => {
       console.log(`Download process exited with code: ${code}`);
       if (code === 0) {
-        handleFilePostDownload(ctx, fileName, title);
+        const newFileName = `${title}.${path.extname(fileName).substring(1)}`;
+        fs.renameSync(fileName, newFileName);
+        handleFilePostDownload(ctx, newFileName, title);
       } else {
         ctx.reply("Failed to download the media. Please try again.");
       }
@@ -189,7 +192,6 @@ function isValidYoutubeUrl(url) {
   return /youtube.com|music.youtube.com/gm.test(url);
 }
 
-// Update yt-dlp every 3 days
 setInterval(() => {
   if (config.ytDlpAutoUpdate) {
     console.log("Updating yt-dlp...");
