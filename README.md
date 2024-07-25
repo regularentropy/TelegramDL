@@ -32,7 +32,7 @@ docker build -t telegram-downloader .
 
 ### Run Docker Container
 ```sh
-docker run -d --name telegram-downloader -v $(pwd)/config.yml:/usr/src/app/config.yml -e BOT_TOKEN=your_telegram_bot_token telegram-downloader
+docker run -d --name telegram-downloader -v $(pwd)/config.yml:/usr/src/app/config.yml -e token=your_telegram_bot_token telegram-downloader
 ```
 Replace `your_telegram_bot_token` with your actual bot token.
 
