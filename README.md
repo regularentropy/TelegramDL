@@ -43,4 +43,4 @@ Replace `your_telegram_bot_token` with your actual bot token.
 - [X] Optimize code
 
 ## Copyright
-Copyright (c) 2022-2024 - regularentropy. All rights reserved.
+Copyright (c) 2022-2025 - regularentropy. All rights reserved.
